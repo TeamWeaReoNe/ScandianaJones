@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 from pymavlink import mavutil
 import time
+from dotenv import load_dotenv
+import os
 
 # --- Configuration ---
-SERIAL_PORT = '/dev/ttyACM0'   # Change to your USB port (e.g., COM3 on Windows)
-BAUD_RATE = 57600              # Common baud rate for flight controllers
-LOG_FILE = 'gps_log.csv'
+# load configuration from the .env file
+load_dotenv()
+
+SAVE2PATH = os.getenv("SAVE2PATH")
+FILE = os.getenv("FILE")
+
+SERIAL_PORT = os.getenv("MAVLINK_DEVICE")   # Change to your USB port (e.g., COM3 on Windows)
+BAUD_RATE = os.getenv("MAVLINK_BAUD_RATE")  # Common baud rate for flight controllers
+
 
 # --- Connect to flight controller ---
 print(f"Connecting to flight controller on {SERIAL_PORT} at {BAUD_RATE} baud...")
@@ -17,6 +25,11 @@ master.wait_heartbeat()
 print(f"Connected to system: {master.target_system}, component: {master.target_component}")
 
 # --- Prepare log file ---
+csv_file = f"gps_{FILE}"
+LOG_FILE = os.path.join(SAVE2PATH, csv_file)
+print(f"logfile {LOG_FILE}")
+
+
 with open(LOG_FILE, 'w') as f:
     f.write("timestamp,lat,lon,alt_m,fix_type,satellites\n")
 
