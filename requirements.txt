@@ -1,2 +1,5 @@
-pynmea2
 dotenv
+pyserial
+pymavlink
+piexif
+opencv-python
