@@ -53,13 +53,13 @@ MAX_DEPTH = NUM_SAMPLES * SAMPLE_RESOLUTION  # Total depth in cm
 def read_packet(ser):
     while True:
         header = ser.read(1)
-        if header != b'\xAA':
+        if header != b"\xaa":
             continue  # Wait for the start byte
 
-        payload = ser.read(6 + 2 * NUM_SAMPLES)
+        payload = ser.read(6 + NUM_SAMPLES)
         checksum = ser.read(1)
 
-        if len(payload) != 6 + 2 * NUM_SAMPLES or len(checksum) != 1:
+        if len(payload) != 6 + NUM_SAMPLES or len(checksum) != 1:
             continue  # Incomplete packet
 
         # Verify checksum
@@ -67,21 +67,18 @@ def read_packet(ser):
         for byte in payload:
             calc_checksum ^= byte
         if calc_checksum != checksum[0]:
-            print("?? Checksum mismatch")
+            print("!! Checksum mismatch: {} != {}".format(calc_checksum, checksum[0]))
             continue
 
-        # Unpack payload
-        depth, temp_scaled, vDrv_scaled = struct.unpack(">HhH", payload[:6])
+        # Unpack payload (firmware sends little-endian raw struct bytes)
+        depth, temp_scaled, vDrv_scaled = struct.unpack("<HhH", payload[:6])
         depth = min(depth, NUM_SAMPLES)
 
-        #print(depth)
-        #print(temp_scaled)
-
-        samples = struct.unpack(f">{NUM_SAMPLES}H", payload[6:])
+        sample_bytes = payload[6:6+NUM_SAMPLES]
+        values = np.frombuffer(sample_bytes, dtype=np.uint8, count=NUM_SAMPLES)
 
         temperature = temp_scaled / 100.0
         drive_voltage = vDrv_scaled / 100.0
-        values = np.array(samples)
 
         return values, depth, temperature, drive_voltage
 
